@@ -83,7 +83,7 @@
     ```bash
     pip install -U micropython-esp32-stubs==1.19.*
     ```
-    
+
 1. Create the file "*.vscode/settings.json*"
 
     ```json
@@ -102,6 +102,11 @@
     ```
 
 
-## Uploading files to the file system
+## AMPY
 
-[https://techtutorialsx.com/2017/06/04/esp32-esp8266-micropython-uploading-files-to-the-file-system/](https://techtutorialsx.com/2017/06/04/esp32-esp8266-micropython-uploading-files-to-the-file-system/)
+
+
+```bash
+pip install adafruit-ampy
+```
+
