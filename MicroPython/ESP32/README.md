@@ -103,9 +103,6 @@
 
 
 ## AMPY
-
-
-
 ```bash
 pip install adafruit-ampy
 ```
