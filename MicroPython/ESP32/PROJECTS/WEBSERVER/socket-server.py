@@ -1,16 +1,19 @@
+# https://realpython.com/python-sockets/
+# https://emalsha.wordpress.com/2016/11/22/how-create-http-server-using-python-socket/
+# https://stackoverflow.com/questions/21153262/sending-html-through-python-socket-server
+# https://stackoverflow.com/questions/4741243/how-to-pick-just-one-item-from-a-generator
+
 import socket
 from apps import *
 
 am = AppManager()
 am.add(AppMain(), True)
+am.add(AppSwitches())
 am.add(AppWifiScan())
 
-app = AppSwitches()
-app.add(12, Pin.LOW, 'LED RED')
-app.add(13, Pin.HIGH, 'LED GREEN')
-
 s = socket.socket()
-s.bind(('', port))
+host, port = '127.0.0.1', 8000
+s.bind((host, port))
 s.listen(5)
 
 while True:

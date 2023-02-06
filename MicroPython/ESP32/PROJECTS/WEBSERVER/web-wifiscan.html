@@ -1,0 +1,53 @@
+<html>
+
+<head>
+  <title>MicroPython Web Server</title>
+</head>
+
+<body>
+  <form id="myForm">
+    <p>Please select your network:</p>
+    <items>
+    Password: <input type="password" name="password" id="password" required><br>
+    <input type="submit" value="OK" id="btnOK">
+    <input type="submit" value="Cancel" id="btnCancel">
+  </form>
+  <script>
+    document.getElementById("btnCancel").addEventListener("click", function (e){
+      e.preventDefault();
+      var xhr = new XMLHttpRequest();
+      xhr.open("POST", "/submit-form", true);
+      xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+      xhr.onreadystatechange = function () {
+        if (this.readyState === XMLHttpRequest.DONE && this.status === 200) {
+          console.log("Response:", this.responseText);
+        }
+        location.reload();
+      };
+      xhr.send("app_name=main&fav_network=''&password=''");
+    });
+
+    document.getElementById("btnOK").addEventListener("click", function (e) {
+      e.preventDefault();
+      var xhr = new XMLHttpRequest();
+      xhr.open("POST", "/submit-form", true);
+      xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+      xhr.onreadystatechange = function () {
+        if (this.readyState === XMLHttpRequest.DONE && this.status === 200) {
+          console.log("Response:", this.responseText);
+        }
+        location.reload();
+      };
+      const radios = document.getElementsByName("fav_network");
+      for (const radio of radios) {
+        if (radio.checked) {
+          fav_network = radio.value
+        }
+      }
+      var password = document.getElementById("password").value;
+      xhr.send("app_name=wifiscan&fav_network=" + encodeURIComponent(fav_network) + "&password=" + encodeURIComponent(password));
+    });
+  </script>
+</body>
+
+</html>
