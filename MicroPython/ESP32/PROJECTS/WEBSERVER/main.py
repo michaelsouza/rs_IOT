@@ -1,4 +1,5 @@
 import socket
+from machine import Pin
 from apps import *
 
 am = AppManager()

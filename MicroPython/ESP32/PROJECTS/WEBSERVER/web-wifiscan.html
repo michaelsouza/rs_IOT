@@ -1,19 +1,20 @@
 <html>
 
 <head>
-  <title>MicroPython Web Server</title>
+  <title>ESP32</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 
 <body>
   <form id="myForm">
-    <p>Please select your network:</p>
-    <items>
+    <h2>Select your network</h2>
+    <items></items>
     Password: <input type="password" name="password" id="password" required><br>
-    <input type="submit" value="OK" id="btnOK">
-    <input type="submit" value="Cancel" id="btnCancel">
+    <button class="btn" id="btnOK">OK</button>
+    <button class="btn" id="btnCancel">Cancel</button>
   </form>
   <script>
-    document.getElementById("btnCancel").addEventListener("click", function (e){
+    document.getElementById("btnCancel").addEventListener("click", function (e) {
       e.preventDefault();
       var xhr = new XMLHttpRequest();
       xhr.open("POST", "/submit-form", true);

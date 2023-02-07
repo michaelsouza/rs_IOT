@@ -83,7 +83,7 @@ class AppWifiScan(App):
         m = ''
         for k, nw in enumerate(self.networks):
             m += s.replace('XXX', nw).replace('YYY', str(k))
-        return self.name, response.replace('<items>', m)
+        return self.name, response.replace('<items></items>', m)
 
     def post(self, request: str):
         self.fav_network = get_value(request, 'fav_network')
@@ -120,15 +120,8 @@ class AppSwitches(App):
         
     def get(self, request: str, response: str):
         s = """
-            <div class="grid-item">
-                <h3>XXX</h3>
-            </div>
-            <div class="grid-item vertical-center">
-                <label class="switch">
-                    <input type="checkbox" name="switch" id="ZZZ" YYY>
-                <span class="slider round"></span>
-                </label>
-            </div>
+            <input type="checkbox" id="ZZZ" name="switch" YYY>
+            <label for="ZZZ">XXX</label><br>
             """
         m = ''
         for id in self.switches:
@@ -137,7 +130,7 @@ class AppSwitches(App):
             m += s.replace('XXX', label) \
                 .replace('YYY', 'checked' if state else '') \
                 .replace('ZZZ', id)
-        response = response.replace('<items>', m)
+        response = response.replace('<items></items>', m)
         return self.name, response
 
     def post(self, request: str):
