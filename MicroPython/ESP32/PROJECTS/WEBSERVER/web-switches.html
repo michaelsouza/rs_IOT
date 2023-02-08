@@ -40,8 +40,8 @@
       var msg = "app_name=switches&";
       const elem = document.getElementsByTagName("input");
       for (var i = 0; i < elem.length; i++){
-        if (elem[i].type == "checkbox")
-          msg += elem[i].id + '=' + elem[i].checked + "&";
+        if (elem[i].type == "checkbox")          
+          msg += elem[i].id + (elem[i].checked ? "=1&" : "=0&");
       }
       console.log("msg:" + msg)
       xhr.send(msg);

@@ -7,6 +7,6 @@
     "python.analysis.typeshedPaths": [
         ".venv/Lib/site-packages"
     ],
-    "python.linting.enabled": true,
+    "python.linting.enabled": false,
     "python.linting.pylintEnabled": true,
 }

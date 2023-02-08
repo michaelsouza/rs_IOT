@@ -20,10 +20,9 @@ class FMT:
 
 
 def main() -> None:
-    ''' main function
-    '''
-    print(
-        f'\n{FMT.OKBLUE}{FMT.BOLD}\u26A1{FMT.UNDERLINE}PROJECT UPLOADER:\n{FMT.ENDC}')
+    ''' main function'''
+
+    print(f'\n{FMT.OKBLUE}{FMT.BOLD}\u26A1{FMT.UNDERLINE}PROJECT UPLOADER:\n{FMT.ENDC}')
 
     wd_project = sys.argv[1]  # project folder
     port = '/dev/ttyUSB0'
@@ -31,25 +30,37 @@ def main() -> None:
     for k, argv in enumerate(sys.argv):
         if argv == '-p':
             port = sys.argv[k+1]
+    
+    # read configs.json
     fname = os.path.join(wd_project, 'configs.json')
+    configs = {}
     if os.path.exists(fname):
-        with open(fname, 'r', encoding='utf-8') as fp:
-            config = json.load(fp)
-
+        with open(fname, 'r') as fp:            
+            configs = json.load(fp)
         print(f'{FMT.OKBLUE}{FMT.BOLD}Configurations:{FMT.ENDC}')
-        for row in json.dumps(config, indent=2).split('\n'):
+        for row in json.dumps(configs, indent=2).split('\n'):
             print(f'\t{row}')
     else:
-        print(f'{FMT.FAIL}{FMT.BOLD}WARNING: There is no config.json file.\n{FMT.ENDC}')
+        print(f'{FMT.FAIL}{FMT.BOLD}WARNING: There is no configs.json file.\n{FMT.ENDC}')
 
-    fnames = []
-    print(f'{FMT.OKBLUE}{FMT.BOLD}File(s) to upload:\n{FMT.ENDC}')
-    for k, fname in enumerate(sorted(os.listdir(wd_project))):
-        if fname == 'configs.json':
+    # get files to be uploaded
+    fnames, max_len = [], 0
+    print(f'\n{FMT.OKBLUE}{FMT.BOLD}File(s) to upload:\n{FMT.ENDC}')
+    for fname in sorted(os.listdir(wd_project)):
+        if fname == 'configs.json' or fname in configs['ignore']:
             continue
         fname = os.path.join(wd_project, fname)
-        print(f'\t{k+1}. {fname}')
+        max_len = max([len(fname), max_len])
         fnames.append(fname)
+
+    # print fnames with sizes in KB
+    total_size = 0
+    for k, fname in enumerate(fnames):
+        fstat = os.stat(fname)
+        total_size += fstat.st_size
+        print(f'%2d. %-{max_len + 3}s %5.2f KB' % (k+1, fname, round(fstat.st_size / 1024,2)))
+    print(((2+2+max_len + 3 + 9) * '-'))
+    print(f'    %-{max_len + 3}s %5.2f KB' % ('Total', round(total_size / 1024,2)))
 
     ans = ''
     while ans not in ['y', 'n']:
@@ -66,7 +77,11 @@ def main() -> None:
     for fname in tqdm(fnames):        
         os.system(f'ampy --port {port} put {fname}')
 
-    print(f'{FMT.WARNING}{FMT.BOLD}\nDone (Remember to reset your device.)\n\n{FMT.ENDC}')
+    print(f'{FMT.WARNING}{FMT.BOLD}\nReseting device{FMT.ENDC}')
+    os.system(f'ampy --port {port} run -n ./TOOLS/machine_reset.py')
+
+
+    print(f'{FMT.OKGREEN}{FMT.BOLD}\nDone{FMT.ENDC}')
 
 
 if __name__ == "__main__":
