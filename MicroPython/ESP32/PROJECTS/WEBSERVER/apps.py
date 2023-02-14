@@ -90,7 +90,7 @@ class AppWifiScan(App):
         m = ''
         for k, nw in enumerate(self.networks):
             m += s.replace('XXX', nw).replace('YYY', str(k))
-        response += self.html.replace('<items></items>', m)
+        response += self.html.replace('<span></span>', m)
         return self.name, response
 
     def post(self, request: str):
@@ -127,11 +127,13 @@ class AppSwitches(App):
     def get(self, request: str, response: str):
         s = """
             <div class="switch-div">
-                <div class="switch-label"><h3>XXX</h3></div>
+                <div class="switch-label">
+                    <h3>xxx</h3>
+                </div>
                 <div class="switch-item">
-                    <label class="switch" for="ZZZ">
-                        <input type="checkbox" id="ZZZ" YYY/>
-                        <div class="slider round"></div>
+                    <label class="switch">
+                        <input type="checkbox" id="zzz" yyy>
+                        <span class="slider round"></span>
                     </label>
                 </div>
             </div>
@@ -140,10 +142,10 @@ class AppSwitches(App):
         for id in self.switches:            
             label = self.switches[id]['label']
             value = self.switches[id]['value']
-            m += s.replace('XXX', label) \
-                .replace('YYY', 'checked' if value else '') \
-                .replace('ZZZ', f'sw-{id}')
-        response += self.html.replace('<items></items>', m)
+            m += s.replace('xxx', label) \
+                .replace('yyy', 'checked' if value else '') \
+                .replace('zzz', f'sw-{id}')
+        response += self.html.replace('<span></span>', m)
         return self.name, response
 
     def post(self, request: str):

@@ -1,4 +1,4 @@
-<html>
+<html lang="en-us">
 
 <head>
   <title>ESP32</title>
@@ -11,22 +11,22 @@
     <h2 id="menu">Menu : WifiScan</h2>
   </div>
   <div class="content">
-    <form id="myForm">
+    <div id="myForm">
       <h3>Select your network</h3><hr>
-      <items></items>
-      <div style="margin-top: 10px;">
+      <span></span>
+      <div class="m-top-10">
         <hr>
-        Password: <input style="margin-top: 5px;"type="password" name="password" id="password" required><br>
-        <button class="btn" id="btnOK">OK</button>
-        <button class="btn" id="btnCancel">Cancel</button>
+        Password: <input class="m-top-5" type="password" name="password" id="password" required><br>
+        <button type="button" class="btn" id="btnOK">OK</button>
+        <button type="button" class="btn" id="btnCancel">Cancel</button>
       </div>
-    </form>
+    </div>
   </div>
-  
+
   <div class="footer">
     <p>@ESP32</p>
   </div>
-  
+
   <script>
     document.getElementById("menu").addEventListener("click", function (e) {
       e.preventDefault();

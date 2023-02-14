@@ -120,3 +120,11 @@
   .switch-item{
     text-align: right;
   }
+
+  .m-top-10{
+    margin-top: 10px;
+  }
+
+  .m-top-5{
+    margin-top: 5px;
+  }
