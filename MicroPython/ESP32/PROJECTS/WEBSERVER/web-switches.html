@@ -3,17 +3,35 @@
 <head>
   <title>ESP32</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-  <form id="myForm">
-    <h2>Toggle Switch</h2>
-    <items></items>
-    <button class="btn" id="btnCancel">Cancel</button>
-  </form>
+  <div class="topnav">
+    <h2 id="menu">Menu : Switches</h2>
+  </div>
+  <div class="content">
+    <form id="myForm">
+      <div class="switch-div">
+        <div class="switch-label">
+          <h3>XXX</h3>
+        </div>
+        <div class="switch-item">
+          <label class="switch" for="ZZZ">
+            <input type="checkbox" id="ZZZ" YYY />
+            <div class="slider round"></div>
+          </label>
+        </div>
+      </div>
+      <items></items>
+    </form>
+  </div>
+  <div class="footer">
+    <p>@ESP32</p>
+  </div>
 
   <script>
-    document.getElementById("btnCancel").addEventListener("click", function (e){
+    document.getElementById("menu").addEventListener("click", function (e) {
       e.preventDefault();
       var xhr = new XMLHttpRequest();
       xhr.open("POST", "/submit-form", true);
@@ -26,7 +44,7 @@
       };
       xhr.send("app_name=main");
     });
-
+  
     document.getElementById("myForm").addEventListener("change", function (e) {
       e.preventDefault();
       var xhr = new XMLHttpRequest();
@@ -39,8 +57,8 @@
       };
       var msg = "app_name=switches&";
       const elem = document.getElementsByTagName("input");
-      for (var i = 0; i < elem.length; i++){
-        if (elem[i].type == "checkbox")          
+      for (var i = 0; i < elem.length; i++) {
+        if (elem[i].type == "checkbox")
           msg += elem[i].id + (elem[i].checked ? "=1&" : "=0&");
       }
       console.log("msg:" + msg)
@@ -48,5 +66,4 @@
     });
   </script>
 </body>
-
 </html>

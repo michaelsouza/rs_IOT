@@ -13,8 +13,19 @@ def get_value(request: str, field: str) -> str:
 
 
 class App(object):
-    def __init__(self):
-        self.name = ''
+    def __init__(self, name:str, html_path:str):
+        self.name = name
+        print('Reading', html_path)
+        with open(html_path, 'r') as fp:
+            self.html = fp.read()
+        print('Reading', 'style.css')
+        with open('style.css', 'r') as fp:
+            self.css = fp.read()
+        print('Inserting css file into html')
+        self.html = self.html.replace(
+            '<link rel="stylesheet" href="style.css">',
+            '<style>%s</style>' % self.css
+        )
 
     def get(self, request: str, response: str):
         return self.name, response
@@ -46,9 +57,7 @@ class AppManager(object):
 
 class AppMain(App):
     def __init__(self):
-        self.name = 'main'
-        with open('web-main.html', 'r') as fp:
-            self.html = fp.read()
+        super().__init__(name='main', 'web-main.html')
 
     def get(self, request: str, response: str):
         return self.name, response + self.html
@@ -59,13 +68,10 @@ class AppMain(App):
 
 
 class AppWifiScan(App):
-    name = 'wifiscan'
-
     def __init__(self):
+        super().__init__(name='wifiscan', 'web-wifiscan.html')
         self.fav_network = None
         self.password = None
-        with open('web-wifiscan.html', 'r') as fp:
-            self.html = fp.read()
 
     @property
     def networks(self):
@@ -78,7 +84,7 @@ class AppWifiScan(App):
 
     def get(self, request: str, response: str):
         s = """
-            <input type="radio" id="nw-YYY" name="fav_network" value="XXX">
+            <input type="radio" id="nw-YYY" name="fav_network" value="XXX" style="margin-top: 5px;">
             <label for="nw-YYY">XXX</label><br>
         """
         m = ''
@@ -96,11 +102,9 @@ class AppWifiScan(App):
 
 class AppSwitches(App):
     def __init__(self):
-        self.name = 'switches'
+        super().__init__(name='switches', 'web-switches.html')
         # read initial states from machine
         self.switches = {}
-        with open('web-switches.html', 'r') as fp:
-            self.html = fp.read()
 
     def add(self, id: int, initval: bool, label: str):
         pin = Pin(id, Pin.OUT)
@@ -122,9 +126,16 @@ class AppSwitches(App):
 
     def get(self, request: str, response: str):
         s = """
-            <input type="checkbox" id="ZZZ" name="switch" YYY>
-            <label for="ZZZ">XXX</label><br>
-            """
+            <div class="switch-div">
+                <div class="switch-label"><h3>XXX</h3></div>
+                <div class="switch-item">
+                    <label class="switch" for="ZZZ">
+                        <input type="checkbox" id="ZZZ" YYY/>
+                        <div class="slider round"></div>
+                    </label>
+                </div>
+            </div>
+        """
         m = ''
         for id in self.switches:            
             label = self.switches[id]['label']

@@ -3,18 +3,32 @@
 <head>
   <title>ESP32</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-  <form id="myForm">
-    <h2>Select your network</h2>
-    <items></items>
-    Password: <input type="password" name="password" id="password" required><br>
-    <button class="btn" id="btnOK">OK</button>
-    <button class="btn" id="btnCancel">Cancel</button>
-  </form>
+  <div class="topnav">
+    <h2 id="menu">Menu : WifiScan</h2>
+  </div>
+  <div class="content">
+    <form id="myForm">
+      <h3>Select your network</h3><hr>
+      <items></items>
+      <div style="margin-top: 10px;">
+        <hr>
+        Password: <input style="margin-top: 5px;"type="password" name="password" id="password" required><br>
+        <button class="btn" id="btnOK">OK</button>
+        <button class="btn" id="btnCancel">Cancel</button>
+      </div>
+    </form>
+  </div>
+  
+  <div class="footer">
+    <p>@ESP32</p>
+  </div>
+  
   <script>
-    document.getElementById("btnCancel").addEventListener("click", function (e) {
+    document.getElementById("menu").addEventListener("click", function (e) {
       e.preventDefault();
       var xhr = new XMLHttpRequest();
       xhr.open("POST", "/submit-form", true);
