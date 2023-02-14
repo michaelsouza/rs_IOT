@@ -2,7 +2,6 @@ import socket
 import network
 from time import sleep
 from machine import Pin, SoftI2C, soft_reset
-from i2c_lcd import I2cLcd
 from apps import *
 
 # blink just to say hello
@@ -16,20 +15,12 @@ for _ in range(3):
     ledG.value(0)
     sleep(0.5)
 
-i2c = SoftI2C(scl=Pin(22), sda=Pin(21), freq=10_000)     #initializing the I2C method for ESP32
-#i2c = I2C(scl=Pin(5), sda=Pin(4), freq=10000)       #initializing the I2C method for ESP8266
-
-I2C_ADDR = 0x27 # can be checked using i2c.scan()
-totalRows = 2
-totalColumns = 16
-
-lcd = I2cLcd(i2c, I2C_ADDR, totalRows, totalColumns)
-lcd.clear()
+lcd = LCD()
 
 lcd.putstr('ADD APPS', True)
 am = AppManager()
 am.add(AppMain(), True)       # add AppMain
-am.add(AppWifiScan())         # add AppWifiScan
+am.add(AppWifiScan(lcd))      # add AppWifiScan
 app = AppSwitches()
 app.add(12, True, 'PIN 12')   # add Pin.OUT
 app.add(13, True, 'PIN 13')   # add Pin.OUT
@@ -50,7 +41,7 @@ s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.bind((HOST, PORT))
 s.listen(5)
 
-lcd.putstr('%-16s' % 'HOST:PORT', True)
+lcd.putstr('%-16s' % 'AP_IF:PORT', True)
 lcd.putstr(f'{HOST}:{PORT}')
 sleep(0.5)
 
@@ -71,3 +62,5 @@ while True:
         conn.send("HTTP/1.1 404 Not Found\n\n".encode())
     
     conn.close()
+    lcd.putstr('%-16s' % 'AP_IF:PORT', True)
+    lcd.putstr(f'{HOST}:{PORT}')

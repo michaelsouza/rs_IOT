@@ -4,6 +4,7 @@
         "testA.py",
         "testB.py",
         "wifimgr.py",
-        "socket-server.py"
+        "socket-server.py",
+        "__pycache__"
     ]
 }

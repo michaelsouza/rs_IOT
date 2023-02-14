@@ -1,6 +1,20 @@
-from machine import Pin
+import json
 import network
+from time import sleep
+from machine import Pin, SoftI2C
+from i2c_lcd import I2cLcd
 
+def LCD():
+    i2c = SoftI2C(scl=Pin(22), sda=Pin(21), freq=10_000)     #initializing the I2C method for ESP32
+    #i2c = I2C(scl=Pin(5), sda=Pin(4), freq=10000)       #initializing the I2C method for ESP8266
+
+    I2C_ADDR = 0x27 # can be checked using i2c.scan()
+    totalRows = 2
+    totalColumns = 16
+
+    lcd = I2cLcd(i2c, I2C_ADDR, totalRows, totalColumns)
+    lcd.clear()
+    return lcd
 
 def get_value(request: str, field: str) -> str:
     s = next(filter(lambda u: f'{field}=' in u,
@@ -46,9 +60,7 @@ class AppManager(object):
 
     def get(self, request: str):
         response = "HTTP/1.1 200 OK\n\n"
-        
         self.app_name, response = self.apps[self.app_name].get(request, response)
-
         return response
 
     def post(self, request: str):
@@ -57,7 +69,7 @@ class AppManager(object):
 
 class AppMain(App):
     def __init__(self):
-        super().__init__(name='main', 'web-main.html')
+        super().__init__(name='main', html_path='web-main.html')
 
     def get(self, request: str, response: str):
         return self.name, response + self.html
@@ -68,41 +80,84 @@ class AppMain(App):
 
 
 class AppWifiScan(App):
-    def __init__(self):
-        super().__init__(name='wifiscan', 'web-wifiscan.html')
-        self.fav_network = None
-        self.password = None
+    def __init__(self, lcd):
+        super().__init__(name='wifiscan',  html_path='web-wifiscan.html')
+        self.lcd = lcd
+        self.ssid, self.password = self.login_load()
+        self.sta_if = network.WLAN(network.STA_IF)
+        self.sta_if.active(True)
+        self.SSID = self.scan() # set of available ssid's
+        self.connect()
 
-    @property
-    def networks(self):
-        sta_if = network.WLAN(network.STA_IF)
-        sta_if.active(True)
-        nws = []
-        for nw in enumerate(sorted(sta_if.scan())):
-            nws.append(str(nw[1][0]))
-        return nws
+    def connect(self):        
+        self.lcd.putstr('CONNECT STA_IF', True)
+        if self.ssid in self.SSID:
+            self.sta_if.connect(self.ssid, self.password)
+            sleep(0.5)        
+        if self.isconnected():
+            IP = self.sta_if.ifconfig()[0]
+            self.lcd.putstr('%-16s' % 'STA_IF:IP', True)
+            self.lcd.putstr(f'{IP}')        
+        else:
+            self.lcd.putstr('FAILED')
+            
+
+    def isconnected(self):
+        return self.sta_if.isconnected()
+
+    def login_load(self):
+        with open('profiles.json', 'r') as fp:
+            self.profiles = json.load(fp)
+
+        ssid = self.profiles['network']['ssid']
+        password = self.profiles['network']['password']        
+        return ssid, password
+
+    def login_save(self, ssid:str, password:str):
+        with open('profiles.json', 'r') as fp:
+            self.profiles = json.load(fp)
+
+        self.profiles['network']['ssid'] = ssid
+        self.profiles['network']['password'] = password
+        with open('profiles.json', 'w') as fp:
+            json.dump(self.profiles, fp)
+
+    def scan(self):
+        self.lcd.putstr('SCAN NETWORKS', True)
+        SSID = {}
+        for ssid in sorted(self.sta_if.scan()):
+            SSID[ssid[0].decode()] = ssid
+        self.lcd.putstr(f'FOUND {len(SSID)}')
+        return SSID
 
     def get(self, request: str, response: str):
         s = """
-            <input type="radio" id="nw-YYY" name="fav_network" value="XXX" style="margin-top: 5px;">
-            <label for="nw-YYY">XXX</label><br>
+            <input type="radio" id="ssid-yyy" name="ssid" value="xxx" class="m-top-5" zzz>
+            <label for="nw-yyy">xxx</label><br>
         """
         m = ''
-        for k, nw in enumerate(self.networks):
-            m += s.replace('XXX', nw).replace('YYY', str(k))
+        for k, ssid in enumerate(self.networks):
+            m += s.replace('xxx', ssid) \
+                .replace('yyy', str(k)) \
+                .replace('zzz', 'checked' if ssid == self.ssid and self.isconnected() else '')
         response += self.html.replace('<span></span>', m)
         return self.name, response
 
     def post(self, request: str):
-        self.fav_network = get_value(request, 'fav_network')
+        self.ssid = get_value(request, 'ssid')
         self.password = get_value(request, 'password')
-        app_name = get_value(request, 'app_name')
+        self.connect()
+        if self.isconnected():
+            self.login_save(self.ssid, self.password)
+            app_name = get_value(request, 'main')
+        else:
+            app_name = self.name
         return app_name
 
 
 class AppSwitches(App):
     def __init__(self):
-        super().__init__(name='switches', 'web-switches.html')
+        super().__init__(name='switches',  html_path='web-switches.html')
         # read initial states from machine
         self.switches = {}
 
@@ -115,7 +170,6 @@ class AppSwitches(App):
             'value': initval,
         }
         self.switches[id] = data
-
         self.update()
 
     def update(self):
@@ -156,3 +210,8 @@ class AppSwitches(App):
                 data['value'] = get_value(request, f'sw-{id}') == '1'
             self.update()
         return app_name
+
+
+if __name__ == "__main__":
+    lcd = LCD()
+    app = AppWifiScan(lcd)
