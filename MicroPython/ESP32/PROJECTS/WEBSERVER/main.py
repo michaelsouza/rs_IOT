@@ -1,7 +1,7 @@
 import socket
 import network
 from time import sleep
-from machine import Pin, SoftI2C, soft_reset
+from machine import Pin
 from apps import *
 
 # blink just to say hello
@@ -17,7 +17,7 @@ for _ in range(3):
 
 lcd = LCD()
 
-lcd.putstr('ADD APPS', True)
+lcd.println('ADD APPS', True)
 am = AppManager()
 am.add(AppMain(), True)       # add AppMain
 am.add(AppWifiScan(lcd))      # add AppWifiScan
@@ -25,7 +25,8 @@ app = AppSwitches()
 app.add(12, True, 'PIN 12')   # add Pin.OUT
 app.add(13, True, 'PIN 13')   # add Pin.OUT
 am.add(app)                   # add AppSwitches
-lcd.putstr('WLAN.AP_IF', True)
+lcd.println('WLAN.AP_IF', True)
+
 sta_ap = network.WLAN(network.AP_IF)
 sta_ap.active(True)
 sta_ap.config(essid="ESP32", password="123456789")
@@ -36,7 +37,7 @@ while sta_ap.active() == False:
 HOST = sta_ap.ifconfig()[0]
 PORT = 80
 
-lcd.putstr('SOCKET.AF_INET')
+lcd.println('SOCKET.AF_INET')
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.bind((HOST, PORT))
 s.listen(5)

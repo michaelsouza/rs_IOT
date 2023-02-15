@@ -1,22 +1,13 @@
 import json
+import socket
 import network
 from time import sleep
-from machine import Pin, SoftI2C
+from network import WLAN
 from i2c_lcd import I2cLcd
+from machine import Pin, SoftI2C
 
-def LCD():
-    i2c = SoftI2C(scl=Pin(22), sda=Pin(21), freq=10_000)     #initializing the I2C method for ESP32
-    #i2c = I2C(scl=Pin(5), sda=Pin(4), freq=10000)       #initializing the I2C method for ESP8266
 
-    I2C_ADDR = 0x27 # can be checked using i2c.scan()
-    totalRows = 2
-    totalColumns = 16
-
-    lcd = I2cLcd(i2c, I2C_ADDR, totalRows, totalColumns)
-    lcd.clear()
-    return lcd
-
-def get_value(request: str, field: str) -> str:
+def request_value(request: str, field: str) -> str:
     s = next(filter(lambda u: f'{field}=' in u,
              request.split('\n'))).split('&')
     for kv in s:
@@ -26,18 +17,45 @@ def get_value(request: str, field: str) -> str:
     return ''
 
 
+class LCD():
+    def __init__(self, I2C_ADDR=0x27, totalRows:int=2, totalColumns:int=16) -> None:            
+        # initializing the I2C method for ESP32
+        self.i2c = SoftI2C(scl=Pin(22), sda=Pin(21), freq=10_000)
+        # i2c = I2C(scl=Pin(5), sda=Pin(4), freq=10000)       #initializing the I2C method for ESP8266
+
+        self.I2C_ADDR = I2C_ADDR  # can be checked using i2c.scan()
+        self.totalRows = totalRows
+        self.totalColumns = totalColumns
+
+        self.lcd = I2cLcd(self.i2c, I2C_ADDR, self.totalRows, self.totalColumns)
+        self.lcd.clear()
+
+    def clear(self):
+        self.lcd.clear()
+
+    def print(self, msg: str, clear: bool = False):
+        if clear:
+            self.clear()
+        self.lcd.putstr(msg)
+
+    def println(self, msg: str, clear: bool = False):
+        if clear:
+            self.clear()
+        self.lcd.putstr(f'%-{self.totalColumns}s' % msg)
+        
+
 class App(object):
-    def __init__(self, name:str, html_path:str):
+    def __init__(self, name: str, html_path: str):
         self.name = name
         print('Reading', html_path)
         with open(html_path, 'r') as fp:
             self.html = fp.read()
-        print('Reading', 'style.css')
-        with open('style.css', 'r') as fp:
+        print('Reading', 'styles.css')
+        with open('styles.css', 'r') as fp:
             self.css = fp.read()
         print('Inserting css file into html')
         self.html = self.html.replace(
-            '<link rel="stylesheet" href="style.css">',
+            '<link rel="stylesheet" href="styles.css">',
             '<style>%s</style>' % self.css
         )
 
@@ -45,13 +63,86 @@ class App(object):
         return self.name, response
 
     def post(self, request: str):
-        pass    
+        pass
+
+
+class NetManager(object):
+    def __init__(self, lcd:LCD) -> None:
+        self.lcd = lcd
+        
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.PORT: int = 80
+
+        self.ap = WLAN(network.AP_IF)
+        self.connect_ap()
+
+        self.sta = WLAN(network.STA_IF)
+        self.connect_sta()
+        
+    def connect_ap(self):
+        self.ap.active(True)
+        self.ap.config(essid="ESP32", password="admin")
+        for _ in range(10):
+            if self.ap.active():
+                break
+            sleep(1)
+        if not self.ap.active():
+            self.lcd.println(f'WLAN.AP({self.PORT})', True)
+            self.lcd.print('FAILED')
+        else:            
+            self.socket_bind()
+
+    def connect_sta(self, essid='', password=''):
+        with open('profiles.json', 'r') as fp:
+            profiles = json.load(fp)
+        
+        if len(essid) == 0 and len(password) == 0:
+            essid = profiles['network']['essid']
+            password = profiles['network']['password']
+        
+        self.sta.connect(essid, password)
+        for _ in range(10):
+            if self.sta.active():
+                break
+            sleep(1)
+        if not self.sta.active():
+            self.lcd.println(f'WLAN.STA({self.PORT})', True)
+            self.lcd.print('FAILED')
+        else:
+            self.IP = self.sta.ifconfig()[0]
+            self.lcd.print(self.IP)
+            # save valid essid, password
+            profiles['network']['essid'] = essid
+            profiles['network']['password'] = password
+            with open('profiles.json', 'w') as fp:
+                json.dump(profiles, fp)
+            self.socket_bind()            
+
+    def socket_bind(self):
+        if self.sta.active():
+            wlan = self.sta
+        else:
+            wlan = self.ap
+        self.socket.bind((wlan.ifconfig()[0], self.PORT))
+        self.socket.listen(5)
+        self.lcd_status()
+
+    def lcd_status(self) -> None:
+        if self.sta.active():
+            wlan = self.sta
+            self.lcd.println(f'WLAN.STA({self.PORT})', True)            
+        else:
+            wlan = self.ap
+            self.lcd.println(f'WLAN.AP({self.PORT})', True)
+        self.lcd.print(wlan.ifconfig()[0])
 
 
 class AppManager(object):
-    def __init__(self):
+    def __init__(self, lcd:LCD):
         self.apps = {}
         self.app_name = ''
+        self.lcd = lcd
+        self.nm = NetManager(lcd)
 
     def add(self, app: App, default: bool = False):
         self.apps[app.name] = app
@@ -60,7 +151,8 @@ class AppManager(object):
 
     def get(self, request: str):
         response = "HTTP/1.1 200 OK\n\n"
-        self.app_name, response = self.apps[self.app_name].get(request, response)
+        self.app_name, response = self.apps[self.app_name].get(
+            request, response)
         return response
 
     def post(self, request: str):
@@ -68,96 +160,64 @@ class AppManager(object):
 
 
 class AppMain(App):
-    def __init__(self):
+    def __init__(self, nw: NetManager):
         super().__init__(name='main', html_path='web-main.html')
+        self.nw = nw
 
     def get(self, request: str, response: str):
+        response += self.html
+        if self.nw.sta.active():
+            response = response.replace('<p>@ESP32</p>','<p>@ESP32 (CONNECTED)</p>')
         return self.name, response + self.html
 
     def post(self, request: str):
-        app_name = get_value(request, 'app_name')
+        app_name = request_value(request, 'app_name')
         return app_name
 
 
 class AppWifiScan(App):
-    def __init__(self, lcd):
+    def __init__(self, nw:NetManager, lcd:LCD):
         super().__init__(name='wifiscan',  html_path='web-wifiscan.html')
-        self.lcd = lcd
-        self.ssid, self.password = self.login_load()
-        self.sta_if = network.WLAN(network.STA_IF)
-        self.sta_if.active(True)
-        self.SSID = self.scan() # set of available ssid's
-        self.connect()
-
-    def connect(self):        
-        self.lcd.putstr('CONNECT STA_IF', True)
-        if self.ssid in self.SSID:
-            self.sta_if.connect(self.ssid, self.password)
-            sleep(0.5)        
-        if self.isconnected():
-            IP = self.sta_if.ifconfig()[0]
-            self.lcd.putstr('%-16s' % 'STA_IF:IP', True)
-            self.lcd.putstr(f'{IP}')        
-        else:
-            self.lcd.putstr('FAILED')
-            
-
-    def isconnected(self):
-        return self.sta_if.isconnected()
-
-    def login_load(self):
-        with open('profiles.json', 'r') as fp:
-            self.profiles = json.load(fp)
-
-        ssid = self.profiles['network']['ssid']
-        password = self.profiles['network']['password']        
-        return ssid, password
-
-    def login_save(self, ssid:str, password:str):
-        with open('profiles.json', 'r') as fp:
-            self.profiles = json.load(fp)
-
-        self.profiles['network']['ssid'] = ssid
-        self.profiles['network']['password'] = password
-        with open('profiles.json', 'w') as fp:
-            json.dump(self.profiles, fp)
+        self.lcd = lcd        
+        self.nw = nw
+        self.SSID = {}
 
     def scan(self):
-        self.lcd.putstr('SCAN NETWORKS', True)
-        SSID = {}
-        for ssid in sorted(self.sta_if.scan()):
-            SSID[ssid[0].decode()] = ssid
-        self.lcd.putstr(f'FOUND {len(SSID)}')
-        return SSID
+        self.lcd.println('SCAN NETWORKS', True)
+        self.SSID = {}
+        for ssid in sorted(self.nw.sta.scan()):
+            self.SSID[ssid[0].decode()] = ssid
+        self.lcd.println(f'FOUND {len(self.SSID)}')
+        return self.SSID
 
     def get(self, request: str, response: str):
+        self.scan()
         s = """
-            <input type="radio" id="ssid-yyy" name="ssid" value="xxx" class="m-top-5" zzz>
-            <label for="nw-yyy">xxx</label><br>
+            <li>
+                <input type="radio" id="ssid-yyy" name="ssid" value="xxx">
+                <label for="nw-yyy">xxx</label><br>
+            </li>
         """
         m = ''
-        for k, ssid in enumerate(self.networks):
-            m += s.replace('xxx', ssid) \
-                .replace('yyy', str(k)) \
-                .replace('zzz', 'checked' if ssid == self.ssid and self.isconnected() else '')
+        for k, ssid in enumerate(sorted(self.SSID)):
+            m += s.replace('xxx', ssid).replace('yyy', str(k))
         response += self.html.replace('<span></span>', m)
+        if self.nw.sta.active():
+            response = response.replace('<p>@ESP32</p>','<p>@ESP32 (CONNECTED)</p>')
         return self.name, response
 
     def post(self, request: str):
-        self.ssid = get_value(request, 'ssid')
-        self.password = get_value(request, 'password')
-        self.connect()
-        if self.isconnected():
-            self.login_save(self.ssid, self.password)
-            app_name = get_value(request, 'main')
-        else:
-            app_name = self.name
+        essid = request_value(request, 'essid')
+        password = request_value(request, 'password')
+        app_name = request_value(request, 'app_name')
+        self.nw.connect_sta(essid=essid, password=password)
         return app_name
 
 
 class AppSwitches(App):
-    def __init__(self):
+    def __init__(self, nw:NetManager):
         super().__init__(name='switches',  html_path='web-switches.html')
+        self.nw = nw
         # read initial states from machine
         self.switches = {}
 
@@ -193,25 +253,49 @@ class AppSwitches(App):
             </div>
         """
         m = ''
-        for id in self.switches:            
+        for id in self.switches:
             label = self.switches[id]['label']
             value = self.switches[id]['value']
             m += s.replace('xxx', label) \
                 .replace('yyy', 'checked' if value else '') \
                 .replace('zzz', f'sw-{id}')
         response += self.html.replace('<span></span>', m)
+        if self.nw.sta.active():
+            response = response.replace('<p>@ESP32</p>','<p>@ESP32 (CONNECTED)</p>')
         return self.name, response
 
     def post(self, request: str):
-        app_name = get_value(request, 'app_name')
+        app_name = request_value(request, 'app_name')
         if app_name == self.name:
             for id in self.switches:
                 data = self.switches[id]
-                data['value'] = get_value(request, f'sw-{id}') == '1'
+                data['value'] = request_value(request, f'sw-{id}') == '1'
             self.update()
         return app_name
 
 
 if __name__ == "__main__":
+    led12 = Pin(12, Pin.OUT)
+    led13 = Pin(13, Pin.OUT)
+    led12.value(1)
+    led13.value(1)
     lcd = LCD()
-    app = AppWifiScan(lcd)
+    nw = NetManager(lcd=lcd)
+    am = AppManager(lcd=lcd)
+    app = AppWifiScan(nw=nw, lcd=lcd)
+    am.add(app, default=True)
+    
+    while True:
+        conn, addr = nw.socket.accept()
+        request = conn.recv(1024).decode()
+        print(request)
+        if "GET / " in request:
+            response = am.get(request)
+            conn.send(response.encode())
+        elif "POST /submit-form" in request:
+            am.post(request)
+            conn.send("HTTP/1.1 200 OK\n\n".encode())
+        else:
+            conn.send("HTTP/1.1 404 Not Found\n\n".encode())    
+        conn.close()
+        nw.lcd_status()

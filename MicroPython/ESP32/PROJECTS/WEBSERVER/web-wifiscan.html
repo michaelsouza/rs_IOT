@@ -3,7 +3,7 @@
 <head>
   <title>ESP32</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
@@ -12,15 +12,18 @@
   </div>
   <div class="content">
     <div id="myForm">
-      <h3>Select your network</h3><hr>
-      <span></span>
+      <hr>
+      <h3>Select your network</h3>
+      <ul>
+        <span></span>
+      </ul>
       <div class="m-top-10">
         <hr>
+        <h3>Password</h3>
         <ul>
-          <li><h4>Password</h4></li>
-          <li><input class="m-top-5" type="password" name="password" id="password" required><br>
+          <li><input type="password" name="password" id="password" required><br>
             <button type="button" class="btn" id="btnOK">Login</button></li>
-        </ul>                
+        </ul>
       </div>
     </div>
   </div>
@@ -41,7 +44,7 @@
         }
         location.reload();
       };
-      xhr.send("app_name=main&ssid=''&password=''");
+      xhr.send("app_name=main&essid=''&password=''");
     });
 
     document.getElementById("btnOK").addEventListener("click", function (e) {
@@ -55,14 +58,14 @@
         }
         location.reload();
       };
-      const radios = document.getElementsByName("ssid");
+      const radios = document.getElementsByName("essid");
       for (const radio of radios) {
         if (radio.checked) {
-          ssid = radio.value
+          essid = radio.value
         }
       }
       var password = document.getElementById("password").value;
-      xhr.send("app_name=wifiscan&ssid=" + encodeURIComponent(ssid) + "&password=" + encodeURIComponent(password));
+      xhr.send("app_name=wifiscan&essid=" + encodeURIComponent(essid) + "&password=" + encodeURIComponent(password));
     });
   </script>
 </body>

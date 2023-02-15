@@ -5,6 +5,8 @@
         "testB.py",
         "wifimgr.py",
         "socket-server.py",
-        "__pycache__"
+        "__pycache__",
+        "main.py",
+        "test.html"
     ]
 }
