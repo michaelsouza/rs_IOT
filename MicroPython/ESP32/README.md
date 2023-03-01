@@ -3,6 +3,17 @@
 ## 1 Installing
 [https://docs.micropython.org/en/latest/esp32/tutorial/intro.html](https://docs.micropython.org/en/latest/esp32/tutorial/intro.html)
 
+1. Install VSCode and Chrome without root access
+    Install 
+    ```
+    dpkg -x google-chrome-stable_current_amd64.deb ~/.bin
+    dpkg -x code_1.76.0-1677667493_amd64.deb ~/.bin
+    ```
+    Edit ~/.bashrc to add to PATH
+    ```
+    export PATH=${PATH}:/home/aluno/.bin/opt/google/chrome:/home/aluno/.bin/usr/share/code/bin
+    ```
+    
 1. Create a new virtual environment
     ```bash
     venv venv
@@ -106,4 +117,3 @@
 ```bash
 pip install adafruit-ampy
 ```
-
