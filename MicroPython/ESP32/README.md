@@ -26,7 +26,7 @@
 
 1. Install epstool
     ```bash
-    pip -m install esptool
+    pip install esptool
     ```
 
 1. Get latest version from 

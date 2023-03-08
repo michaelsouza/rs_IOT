@@ -22,7 +22,7 @@ class FMT:
 def main() -> None:
     ''' main function'''
 
-    print(f'\n{FMT.OKBLUE}{FMT.BOLD}\u26A1{FMT.UNDERLINE}PROJECT UPLOADER:\n{FMT.ENDC}')
+    print(f'\n{FMT.OKBLUE}{FMT.BOLD}{FMT.UNDERLINE}PROJECT UPLOADER:{FMT.ENDC}\u26A1\n')
 
     wd_project = sys.argv[1]  # project folder
     port = '/dev/ttyUSB0'
@@ -45,7 +45,7 @@ def main() -> None:
 
     # get files to be uploaded
     fnames, max_len = [], 0
-    print(f'\n{FMT.OKBLUE}{FMT.BOLD}File(s) to upload:\n{FMT.ENDC}')
+    print(f'\n{FMT.OKBLUE}{FMT.BOLD}File(s) to upload:{FMT.ENDC}')
     for fname in sorted(os.listdir(wd_project)):
         if fname == 'configs.json' or fname in configs['ignore']:
             continue
@@ -73,7 +73,7 @@ def main() -> None:
         print(f'{FMT.FAIL}{FMT.BOLD}\n\u26D4 Aborting\n\n{FMT.ENDC}')
         return
 
-    print(f'{FMT.OKGREEN}{FMT.BOLD}\n\u261D Uploading files\n{FMT.ENDC}')
+    print(f'{FMT.OKGREEN}{FMT.BOLD}\nUploading files\u261D\n{FMT.ENDC}')
     for fname in tqdm(fnames):        
         os.system(f'ampy --port {port} put {fname}')
 
